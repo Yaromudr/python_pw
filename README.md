@@ -69,11 +69,29 @@ allure serve allure-results
 В отчёте у каждого теста расписаны шаги (`@allure.step` в Page Object'ах), а к упавшим
 тестам автоматически прикладывается скриншот страницы на момент падения (см. `conftest.py`).
 
+## Параллельный запуск
+
+Тесты независимы друг от друга (каждый сам логинится и создаёт своё состояние), поэтому их
+можно гонять параллельно через `pytest-xdist`:
+
+```bash
+pytest -n auto     # по одному воркеру на ядро CPU
+pytest -n 4         # фиксированное число воркеров
+```
+
+## CI (GitHub Actions)
+
+Workflow [.github/workflows/ci.yml](.github/workflows/ci.yml) гоняет весь набор тестов в
+headless-режиме на `ubuntu-latest` при каждом push/PR в `main`: ставит зависимости, браузер
+Chrome, запускает `pytest -n auto` и прикладывает `allure-results` как артефакт прогона
+(доступен на вкладке Actions → конкретный ран → Artifacts).
+
 ## Структура проекта
 
 ```
-config/         # настройки проекта (config/settings.py читает .env)
-pages/          # Page Object'ы (base_page.py — базовый класс, шаги авторизации/каталога/корзины/чекаута)
-tests/ui/       # UI-тесты (логин, добавление в корзину, оформление заказа)
-conftest.py     # фикстуры pytest-playwright + allure (настройки браузера, скриншот на падении)
+.github/workflows/  # CI-пайплайн (GitHub Actions)
+config/              # настройки проекта (config/settings.py читает .env)
+pages/               # Page Object'ы (base_page.py — базовый класс, шаги авторизации/каталога/корзины/чекаута)
+tests/ui/            # UI-тесты (логин, добавление в корзину, оформление заказа)
+conftest.py          # фикстуры pytest-playwright + allure (настройки браузера, скриншот на падении)
 ```
