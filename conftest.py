@@ -1,9 +1,13 @@
+import shutil
 import sys
+from pathlib import Path
 
 import allure
 import pytest
 
 from config.settings import settings
+
+ALLURE_RESULTS_DIR = Path("allure-results")
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -11,6 +15,14 @@ def pytest_configure(config: pytest.Config) -> None:
     если он не передан явно флагом --browser в командной строке."""
     if "--browser" not in " ".join(sys.argv):
         config.option.browser = [settings.browser_engine]
+
+    # Чистим allure-results сами, а не флагом --clean-alluredir: под pytest-xdist
+    # pytest_configure вызывается в каждом воркере, а allure-pytest чистит папку
+    # без блокировки (shutil.rmtree внутри AllureFileLogger) — параллельные
+    # воркеры могут снести уже записанные результаты друг друга. Чистим один раз,
+    # до того как xdist вообще порождает воркеров (у воркеров есть config.workerinput).
+    if not hasattr(config, "workerinput") and ALLURE_RESULTS_DIR.exists():
+        shutil.rmtree(ALLURE_RESULTS_DIR)
 
 
 @pytest.fixture(scope="session")
